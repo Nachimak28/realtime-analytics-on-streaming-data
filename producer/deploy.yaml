@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: pykaf-producer
+  name: pykaf-producer
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      run: pykaf-producer
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: pykaf-producer
+    spec:
+      containers:
+        - image: localhost:5000/pykaf-producer:v1
+          imagePullPolicy: Always
+          name: pykaf-producer
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          env:
+            - name: PRODUCER_KAFKA_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: streaming-config
+                  key: kafka_sensor_topic_name
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
