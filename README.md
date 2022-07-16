@@ -13,35 +13,143 @@ The sensor operates 24/7 and it will work forever.
 Coming soon...
 
 ## What I aim to learn out of this pet project
-Data Engineering using queue based solutions and an intuitive solution for incremental and real time analytics. Some math about the incremental mean and std dev. Also websockets with a fanout pattern. 
+Basics of Data Engineering using queue based solutions and an intuitive solution for incremental and real time analytics. Some math about the incremental mean and std dev. Also socketio.
 
 ## Methodology
-We simulate an IoT sensor producing some value at fixed time intervals and our aim is to build a system which is real time in nature and provides us with the mean and standard deviation of the values generated till date. As per the constraints, we can't store all values generated so we must simulate streaming analytics with incremental updates. We use special formulas for mean and std dev calculations which support incoming new data (1 data point) and their output equals to the actual mean and std dev if all values are stored. The generation process is a simple random number generation written in python which acts as a Producer for the queue. The producer throws all the values on the queue (we use kafka as the event bus here). A consumer on the other end subscribes to this queue, listens to incoming messages, consumes them, does the calculation and stores them in a database (redis). These values are also then published to another queue which is meant for the updates to be sent to a simple websocket based Javascript backend server. A simple frontend displays the mean and standard deviation in an updating fashion with the websocket connection.   
+We simulate an IoT sensor producing some value at fixed time intervals and our aim is to build a system which is real time in nature and provides us with the mean and standard deviation of the values generated till date. As per the constraints, we can't store all values generated so we must simulate streaming analytics with incremental updates. We use special formulas for mean and std dev calculations which support incoming new data (1 data point) and their output equals to the actual mean and std dev if all values are stored. The generation process is a simple random number generation written in python which acts as a Producer for the queue. The producer throws all the values on the queue (we use kafka as the event bus here). A consumer on the other end subscribes to this queue, listens to incoming messages, consumes them, does the calculation and stores them in a database (redis). These values are also then published to another queue which is meant for the updates to be sent to a simple websocket based Javascript backend server. A simple frontend displays the mean and standard deviation in an updating fashion with a socket.io connection.   
 
 ## Tech stack used
 * Python for writing the producer and consumer codebase. 
-* Javacript (node & express) for the websocket(socketio) backend.
+* Javacript (node & express) for the socketio backend.
 * React for the frontend.
 * Kafka as an event bus (can easily use RabbitMQ, NATS, NATS streaming, redis pub/sub etc. instead)
 * Redis as a database
 * Docker to containerize all individual deplyoments
-* Kubernetes (k3s) for orchestration 
+* Kubernetes (k3s) for orchestration
 
-## Steps to follow along and replicate this project
+# Steps to follow along and replicate this project are as follows
 
 All these modules can be run in a single machine. I run all this in a Google Cloud VM with 2 vCPU and 7.5 GB RAM with Ubuntu 18.04. 
+Note: All these steps must be followed in the given order or we might see a lot of errors
 
-### Installing k3s
+## Prerequisites
+* Docker - [Installation steps](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
-### Installing and configuring helm
+## Installing k3s
+K3s is a lightweight version of the Kubernetes (K8s) API made to work on edge devices (IoT systems) such as a raspberry pi but it works perfectly well in a normal system.
 
-### Installing docker
+Navigate to the following website: https://k3s.io/ and follow the steps given right on the first page to install it
 
-### Running a local docker container registry
+If you see the following error: 
 
-### Deploying kafka in the k3s cluster
+`
+WARN[0000] Unable to read /etc/rancher/k3s/k3s.yaml, please start server with --write-kubeconfig-mode to modify kube config permissions 
+error: error loading config file "/etc/rancher/k3s/k3s.yaml": open /etc/rancher/k3s/k3s.yaml: permission denied
+`
 
-### Deploying redis in the k3s cluster
+Follow the steps given in [this answer](https://devops.stackexchange.com/questions/16043/error-error-loading-config-file-etc-rancher-k3s-k3s-yaml-open-etc-rancher) to set the permissions the right way
+
+
+## Installing and configuring helm
+Helm is a package manager for kubernetes - analogous to pip for python.
+
+Just follow the steps mentioned here: https://helm.sh/docs/intro/install/
+
+Note: The older helm client (v2) required to create a service account - tiller (remote component) to be able to create deployments in the kubernetes cluster, now its not needed.
+
+
+## Running a local docker container registry
+There could be times that we need to upload our docker images to some private registry due to propreitory work or secret assets. I generally use google cloud's registry but if you don't have a cloud provision, you can configure your own registry running in the same machine from where kubernetes can pull the docker images. 
+
+We can simply deploy our docker registry in our machine using the following command:
+
+```
+$ docker run -d -p 5000:5000 --restart=always --name registry registry:2
+```
+
+To verify if the registry is up and running run
+
+```
+
+$ docker ps
+```
+
+The output should look something like this:
+
+```
+CONTAINER ID   IMAGE        COMMAND                  CREATED         STATUS         PORTS                                       NAMES
+2b3ee4a79eb5   registry:2   "/entrypoint.sh /etc…"   2 minutes ago   Up 2 minutes   0.0.0.0:5000->5000/tcp, :::5000->5000/tcp   registry
+```
+
+If you get any errors, google up the error - most of the docker errors are solved on Stack Overflow.
+These steps are from https://docs.docker.com/registry/deploying/ where you might find extra steps to secure this registry.
+
+## Deploying kafka in the k3s cluster
+We use helm to install a kafka deployment in our cluster to save us the hassles of doing a custom kubernetes deployment (no good sources on the internet seems to have good documentation to deploy kafka in kubernetes using k8s manifests)
+
+First add the bitnami repo where the official kafka chart resides
+```
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+Then go ahead and install kafka in the cluster
+```
+$ helm install my-release bitnami/kafka
+```
+
+The output should look something like this:
+```
+NAME: my-release
+LAST DEPLOYED: Sat Jul 16 16:55:52 2022
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: kafka
+CHART VERSION: 18.0.3
+APP VERSION: 3.2.0
+
+** Please be patient while the chart is being deployed **
+
+Kafka can be accessed by consumers via port 9092 on the following DNS name from within your cluster:
+
+    my-release-kafka.default.svc.cluster.local
+
+Each Kafka broker can be accessed by producers via port 9092 on the following DNS name(s) from within your cluster:
+
+    my-release-kafka-0.my-release-kafka-headless.default.svc.cluster.local:9092
+
+To create a pod that you can use as a Kafka client run the following commands:
+
+    kubectl run my-release-kafka-client --restart='Never' --image docker.io/bitnami/kafka:3.2.0-debian-11-r12 --namespace default --command -- sleep infinity
+    kubectl exec --tty -i my-release-kafka-client --namespace default -- bash
+
+    PRODUCER:
+        kafka-console-producer.sh \
+            
+            --broker-list my-release-kafka-0.my-release-kafka-headless.default.svc.cluster.local:9092 \
+            --topic test
+
+    CONSUMER:
+        kafka-console-consumer.sh \
+            
+            --bootstrap-server my-release-kafka.default.svc.cluster.local:9092 \
+            --topic test \
+            --from-beginning
+```
+
+After a few minutes we can check if the kafka deployments are ready to use
+Run the following command to keep checking the status and the output should have the status "Running" for both zookeeper and kafka pods
+```
+$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+my-release-zookeeper-0   1/1     Running   0          2m47s
+my-release-kafka-0       1/1     Running   0          2m47s
+```
+
+
+## Deploying redis in the k3s cluster
+
 
 ### Running the consumer in the k3s cluster
 
