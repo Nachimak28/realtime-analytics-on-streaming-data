@@ -12,7 +12,6 @@ const io = new Server(server, {
   cors: {
     origin: "*",
   },
-  // path: "/be/socket.io",
   secure: false,
 });
 const consume = require('./consumer.js');
@@ -29,20 +28,6 @@ client.connect();
 client.on("error", (err) => {
   console.log("Error " + err);
 });
-
-// app.get("/initvalue", async (req, res) => {
-//   // retrieve data from redis and send that
-//   // await client.connect();
-//   const value = await client.hGetAll("sensor_1");
-//   if (value) {
-//     res.send(value)
-//   }
-//   else {
-//     res.send({message: 'error retrieving data from redis'})
-//   }
-
-//   // await client.disconnect();
-// });
 
 
 app.get("/be/initvalue", async (req, res) => {
