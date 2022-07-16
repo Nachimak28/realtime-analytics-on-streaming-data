@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: pykaf-consumer
+  name: pykaf-consumer
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      run: pykaf-consumer
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: pykaf-consumer
+    spec:
+      containers:
+        - image: localhost:5000/pykaf-consumer:v1
+          imagePullPolicy: Always
+          name: pykaf-consumer
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          env:
+            - name: CONSUMER_KAFKA_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: streaming-config
+                  key: kafka_sensor_topic_name
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-redis
+                  key: redis-password
+            - name: REDIS_URL
+              value: my-redis-master
+            - name: FRONTEND_PRODUCER_KAFKA_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: streaming-config
+                  key: kafka_frontend_topic_name
+
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
