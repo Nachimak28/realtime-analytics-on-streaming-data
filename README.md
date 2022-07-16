@@ -1,4 +1,4 @@
-# Simple real time analytics demo (WIP)
+# Simple real time analytics demo
 
 ## Objective 
 To build a simple example of getting real time analytics (mean and standard deviation) of a simulated IoT sensor values (temperature/soil nitrogen content/moisture content etc). 
