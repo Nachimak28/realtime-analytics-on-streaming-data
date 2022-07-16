@@ -146,21 +146,100 @@ NAME                     READY   STATUS    RESTARTS   AGE
 my-release-zookeeper-0   1/1     Running   0          2m47s
 my-release-kafka-0       1/1     Running   0          2m47s
 ```
-
+The same instructions to deploy kafka can be found in the official bitnami helm charts documentations: https://bitnami.com/stack/kafka/helm
 
 ## Deploying redis in the k3s cluster
+We deploy redis in a similar way we deployed kafka - using helm
+
+The following command deploys a replicaset of redis in the cluster:
+
+```
+$ helm install my-redis bitnami/redis
+NAME: my-redis
+LAST DEPLOYED: Sat Jul 16 17:38:29 2022
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: redis
+CHART VERSION: 17.0.1
+APP VERSION: 7.0.3
+
+** Please be patient while the chart is being deployed **
+
+Redis&reg; can be accessed on the following DNS names from within your cluster:
+
+    my-redis-master.default.svc.cluster.local for read/write operations (port 6379)
+    my-redis-replicas.default.svc.cluster.local for read-only operations (port 6379)
 
 
-### Running the consumer in the k3s cluster
 
-### Running the producer in the k3s cluster
+To get your password run:
 
-### Testing the event flow between the producer and consumer flow
+    export REDIS_PASSWORD=$(kubectl get secret --namespace default my-redis -o jsonpath="{.data.redis-password}" | base64 -d)
 
-### Deploying the socketio backend in the k3s cluster and exposing it to the world
+To connect to your Redis&reg; server:
+
+1. Run a Redis&reg; pod that you can use as a client:
+
+   kubectl run --namespace default redis-client --restart='Never'  --env REDIS_PASSWORD=$REDIS_PASSWORD  --image docker.io/bitnami/redis:7.0.3-debian-11-r0 --command -- sleep infinity
+
+   Use the following command to attach to the pod:
+
+   kubectl exec --tty -i redis-client \
+   --namespace default -- bash
+
+2. Connect using the Redis&reg; CLI:
+   REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h my-redis-master
+   REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h my-redis-replicas
+
+To connect to your database from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace default svc/my-redis-master 6379:6379 &
+    REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h 127.0.0.1 -p 6379
+```
+
+In a few seconds or minutes, we must see the redis deployments running along with the already deployed kafka:
+```
+kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+my-release-zookeeper-0   1/1     Running   0          43m
+my-release-kafka-0       1/1     Running   0          43m
+my-redis-replicas-0      0/1     Running   0          40s
+my-redis-master-0        1/1     Running   0          40s
+```
+
+## Running the producer in the k3s cluster
+This is a simple python random number generator pushing values to a kafka topic/queue mimicking/simulating actual sensor values received from a sensor (eg: nitrogen content soil sensor) at certain time intervals (10 seconds in our case)
 
 
-### Deploying the frontend in the k3s cluster and exposing it to the world
+First build the docker image and tag it
+```
+docker build -t localhost:5000/pykaf-producer:v1 .
+```
+
+Push the image to the registry for k3s to pick it up
+
+```
+docker push localhost:5000/pykaf-producer:v1
+```
+
+Once pushed, deploy the producer in the cluster 
+
+
+## Running the consumer in the k3s cluster
+
+
+
+
+## Testing the event flow between the producer and consumer flow
+
+## Deploying the socketio backend in the k3s cluster and creating the service
+
+## Deploying the frontend in the k3s cluster and creating the service
+
+##
 
 
 ## Output
