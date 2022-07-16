@@ -1,0 +1,20 @@
+.Grid .Data{
+    cursor: pointer;
+}
+.Grid .Data .goUp{
+    display: inline-flex;
+    opacity: 0;
+    transform: translate3d(0, -20px, 0);
+    transition: 0.1s ease-in-out;
+}
+.Grid .Data .waitDown{
+    display: inline-flex;
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+}
+.Grid .Data .initial{
+    display: inline-flex;
+    opacity: 1;
+    transform: translate3d(0, 0px, 0);
+    transition: 0.1s ease-in-out;
+}
