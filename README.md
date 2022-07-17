@@ -319,6 +319,12 @@ pykaf-producer-5798b957d5-t29pv   1/1     Running   0             15m
 pykaf-consumer-77bd8764f7-45578   1/1     Running   0             2m19s
 ```
 
+The consumer codebase is responsible for:
+1.) Listening to a kafka topic to consume messages from the so-called sensor/producer
+2.) Doing the calculations for moving mean and standard deviation
+3.) Reading & Updating the calculation output to redis
+4.) Producing or transmitting calcultion results to another kafka topic/queue for the backend to consume and produce them to a nifty little frontend for the real time updates
+
 ## Testing the event flow between the producer and consumer flow
 Now that our kafka, producer and consumer codebases are deployed lets verify if the events are being transmitted among them successfully.
 
@@ -376,10 +382,44 @@ Answer: It could be a problem in the kafka config - kafka cluster name, queue na
 
 
 ## Deploying the socketio backend in the k3s cluster and creating the service
-Now that
+Now that the event transmission is successful, we need to deploy a backend service which listens to the consumer as it relays the results for the real time updates.
+This backend is essentially a node, express server with a socketio integration which emits the events received from the kafka queue to the frontend.
+Note: Socket.io is not websocket by itself - Read [this](https://socket.io/docs/v4/) to understand the difference.
 
+```
+# after the consumer deployment, change directory to be inside the backend directory
+$ cd ../backend
+```
+
+Build the docker image, tag it and deploy it to the cluster
+```
+$ docker build -t localhost:5000/backend:v1 .
+$ docker push localhost:5000/backend:v1
+$ kubectl apply -f deploy.yaml
+
+# test if container is running
+$ kubectl get pods | grep backend
+# output
+backend-6984c9dd89-fpmrn          1/1     Running   0              51s
+```
+
+Exposing the deployment as a service within the cluster 
+We don't expose the deployment directly to the outside world and use ingress for that
+```
+$ kubectl expose deployment backend --type=ClusterIP --name=backend-service --port=80 --target-port=3000
+
+# test if the service is up and running on port 80 (not 3000 because we've done the port forwarding in the command above)
+
+$ kubectl get svc | grep backend
+
+# output
+backend-service                 ClusterIP   10.43.229.96    <none>        80/TCP                       58s
+# do not worry about the IP here, its an internal IP
+```
 
 ## Deploying the frontend in the k3s cluster and creating the service
+The frontend is a socket.io client built using react js and has some baqsic animations to show the real time updates. We could have easily set up a REST based backend but then we wouldn't get 
+
 
 ## Depoying the ingress for the apps to be available outside the machine
 
