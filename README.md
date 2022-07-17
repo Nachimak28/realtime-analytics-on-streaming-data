@@ -322,10 +322,10 @@ pykaf-consumer-77bd8764f7-45578   1/1     Running   0             2m19s
 ```
 
 The consumer codebase is responsible for:
-1.) Listening to a kafka topic to consume messages from the so-called sensor/producer
-2.) Doing the calculations for moving mean and standard deviation
-3.) Reading & Updating the calculation output to redis
-4.) Producing or transmitting calcultion results to another kafka topic/queue for the backend to consume and produce them to a nifty little frontend for the real time updates
+* Listening to a kafka topic to consume messages from the so-called sensor/producer
+* Doing the calculations for moving mean and standard deviation
+* Reading & Updating the calculation output to redis
+* Producing or transmitting calcultion results to another kafka topic/queue for the backend to consume and produce them to a nifty little frontend for the real time updates
 
 ## Testing the event flow between the producer and consumer flow
 Now that our kafka, producer and consumer codebases are deployed lets verify if the events are being transmitted among them successfully.
