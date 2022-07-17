@@ -3,14 +3,15 @@ import io from "socket.io-client";
 import Layout from "./components/Layout";
 import './App.css';
 
-const socket = io("http://your_ip_here");
+const ip = 'your_ip_here';
+const socket = io(`http://${ip}`);
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [sensorData, setSensorData] = useState({});
 
   async function fetchLatestDbEntry() {
-    const response = await fetch("http://your_ip_here/be/initvalue");
+    const response = await fetch(`http://${ip}/be/initvalue`);
     const data = await response.json();
     setSensorData(data);
   }

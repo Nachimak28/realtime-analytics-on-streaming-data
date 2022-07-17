@@ -418,15 +418,112 @@ backend-service                 ClusterIP   10.43.229.96    <none>        80/TCP
 ```
 
 ## Deploying the frontend in the k3s cluster and creating the service
-The frontend is a socket.io client built using react js and has some baqsic animations to show the real time updates. We could have easily set up a REST based backend but then we wouldn't get 
+The frontend is a socket.io client built using react js and has some basic animations to show the real time updates. We could have easily set up a REST based backend but then we wouldn't get any updates from server automatically without refreshing the page. 
+
+```
+# once backend is deployed, we now need to be in the frontend directory
+$ cd ../frontend
+
+# now we are in the realtime-analytics-on-streaming-data/frontend directory
+```
+
+Before deploying the frontend, we must make a small modification of the external IP for the machine at line number 6 in the App.js file in the path `frontend/src/App.js`.
+Put your machine's external IP at line number 6. 
+eg: const ip = '149.63.47.22'
+
+If you're on a local machine, I think but url can be `localhost` - untested assumption, feel free to check it out
+
+Once the IP is changed, we can deploy the frontend just like the previous deployments
+
+Build the docker image, tag it and push it to the registry
+
+```
+$ docker build -t localhost:5000/frontend:v1 .
+$ docker push localhost:5000/frontend:v1
+$ kubectl apply -f deploy.yaml
+```
+
+Expose the service as a ClusterIP service on port 80
+```
+$ kubectl expose deployment frontend --type=ClusterIP --name=frontend-svc --port=80 --target-port=3000
+```
+
+Test if the service exposed
+```
+$ kubectl get svc | grep front
+
+# output
+frontend-svc                    ClusterIP   10.43.189.53    <none>        80/TCP                       13s
+```
 
 
 ## Depoying the ingress for the apps to be available outside the machine
+Although we've created the services for our backend and frontend deployments, they're still available from within the cluster and not to the outside world. 
+To make them accessible from the browser/postman we use a kubernetes network object called Ingress which manages the routing and the incoming/outgoing traffic to the necessary services based on their URL mapping. 
+The ingress is make up of two components - an ingress controller and the ingress config. 
+K3s already comes with an ingress controller configured and running - ```traefik```. A similar component is offered by nginx: ```ingress-nginx```which is the defacto standard while working with kubernetes. But here to avoid doing any new config, we simply use ```traefik``` because it offers similar capabilities as that of ```ingress-nginx```.
+
+Assuming all the services are exposed we now go back into our infra folder 
+```
+$ cd ../infra
+```
+
+And deploy the ingress.yaml file which consists the routing instructions for our backend and frontend services
+```
+$ kubectl apply -f ingress.yaml
+```
+To verify if the ingress is running, run the following command
+
+```
+$ kubectl get ingress
+
+# output
+NAME            CLASS    HOSTS   ADDRESS       PORTS   AGE
+nginx-ingress   <none>   *       <some-ip>     80      6s
+```
+
+Luckily in my cloud machine, I did not have to do any host or port binding of my VM to the ingress because I think k3s takes care of it. 
+So get the external IP of your cloud machine and go to the following URL in your browser
+
+http://<external-ip>/frontend
+
+For a local deployment: just go to http://localhost/frontend
+
+Voila!!
+We're done here.
+
 
 ## Output
 
+
+
+## Rejoice
+Congratulations on making it till this far. We're done with the deployment and we can enjoy the output displayed in the browser.
+
+
 ## Word of caution
-This is by no means a production level codebase and system design. If running locally, this system might slow down your computer if multiple other applications are already running. 
+This is by no means a production level codebase and system design. If running locally, this system might slow down your computer if multiple other applications are already running.
+
+## Some measures taken to have better security
+Although this codebase isn't production grade, some measures can be taken to strengthen the security as follows:
+
+1.) Authentication and RBAC for deployments for kafka
+2.) RBAC for redis
+3.) Making the python codebase asyncronous to have some thread-safe behaviour
+4.) Configure TLS certificates in the ingress for the URLs to load the website on https instead of http
+5.) Some replicasets for kafka in case of pod failures, our redis deployment is already resilient because it is a replicaset
+6.) For components like kafka and redis, it would be preferrable to use managed services on clouds or on respective providers if you do not want the management headache and if you're a small team with limited knowledge about maintaining these services
+
+## What all could go wrong - single point of failures ? 
+* Kafka serves as the backbone in this architecture, if that goes down, the entire contraption is useless
+* Redis serves as the current state for the resultant calculation of the analytics. If that goes down, we won't be able to show the updates to the frontend
+
+## Is this system architecture extensible ?
+Absolutely it is. One can add more sensors and do minor backend and frontend modifications to add more data
+Some possible applications which can be modelled based on this architecture:
+* A cricbuzz like live score for sports
+* A system to show views on insta reels as more and more people watch your reel (this would need some user specific analytics modifications and not a general analytics like we have)
+* Have a machine learning usecase where the inference happens in the consumer code and the results are relayed back to the user if its a long running task without having to worry about API timeouts
 
 
 ## Helpful links
