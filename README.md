@@ -35,6 +35,7 @@ Note: All these steps must be followed in the given order or we might see a lot 
 ## Prerequisites
 * Docker - [Installation steps](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
+
 ## Installing k3s
 K3s is a lightweight version of the Kubernetes (K8s) API made to work on edge devices (IoT systems) such as a raspberry pi but it works perfectly well in a normal system.
 
@@ -70,7 +71,6 @@ $ docker run -d -p 5000:5000 --restart=always --name registry registry:2
 To verify if the registry is up and running run
 
 ```
-
 $ docker ps
 ```
 
@@ -155,6 +155,11 @@ The following command deploys a replicaset of redis in the cluster:
 
 ```
 $ helm install my-redis bitnami/redis
+```
+
+The output should look something like this
+
+```
 NAME: my-redis
 LAST DEPLOYED: Sat Jul 16 17:38:29 2022
 NAMESPACE: default
@@ -210,6 +215,15 @@ my-redis-replicas-0      0/1     Running   0          40s
 my-redis-master-0        1/1     Running   0          40s
 ```
 
+
+## Clone this repo
+
+```
+git clone https://github.com/Nachimak28/realtime-analytics-on-streaming-data
+# change directory to be inside the repo folder
+cd realtime-analytics-on-streaming-data
+```
+
 ## Running the producer in the k3s cluster
 This is a simple python random number generator pushing values to a kafka topic/queue mimicking/simulating actual sensor values received from a sensor (eg: nitrogen content soil sensor) at certain time intervals (10 seconds in our case)
 
@@ -245,11 +259,8 @@ Once pushed, deploy the producer in the cluster
 ## Output
 
 
-## TODO
-
-
 ## Word of caution
-This is by no means a production level codebase and system design. If running locally, this system might slow down your computer even with 16 GB RAM, so be careful while deploying it.
+This is by no means a production level codebase and system design. If running locally, this system might slow down your computer if multiple other applications are already running. 
 
 
 ## Helpful links
