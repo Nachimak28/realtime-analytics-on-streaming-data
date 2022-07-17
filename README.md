@@ -511,12 +511,12 @@ This is by no means a production level codebase and system design. If running lo
 ## Some measures taken to have better security
 Although this codebase isn't production grade, some measures can be taken to strengthen the security as follows:
 
-1.) Authentication and RBAC for deployments for kafka
-2.) RBAC for redis
-3.) Making the python codebase asyncronous to have some thread-safe behaviour
-4.) Configure TLS certificates in the ingress for the URLs to load the website on https instead of http
-5.) Some replicasets for kafka in case of pod failures, our redis deployment is already resilient because it is a replicaset
-6.) For components like kafka and redis, it would be preferrable to use managed services on clouds or on respective providers if you do not want the management headache and if you're a small team with limited knowledge about maintaining these services
+* Authentication and RBAC for deployments for kafka
+* RBAC for redis
+* Making the python codebase asyncronous to have some thread-safe behaviour
+* Configure TLS certificates in the ingress for the URLs to load the website on https instead of http
+* Some replicasets for kafka in case of pod failures, our redis deployment is already resilient because it is a replicaset
+* For components like kafka and redis, it would be preferrable to use managed services on clouds or on respective providers if you do not want the management headache and if you're a small team with limited knowledge about maintaining these services
 
 ## What all could go wrong - single point of failures ? 
 * Kafka serves as the backbone in this architecture, if that goes down, the entire contraption is useless
