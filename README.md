@@ -23,8 +23,9 @@ We simulate an IoT sensor producing some value at fixed time intervals and our a
 * Javacript (node & express) for the socketio backend.
 * React for the frontend.
 * Kafka as an event bus (can easily use RabbitMQ, NATS, NATS streaming, redis pub/sub etc. instead)
-* Redis as a database
+* Redis as a database (coz why not! can use mongo too - preferrable some key value pair DB)
 * Docker to containerize all individual deplyoments
+* Helm as package manager for configuring deployment in the kubernetes cluster
 * Kubernetes (k3s) for orchestration
 
 # Steps to follow along and replicate this project are as follows
@@ -252,7 +253,7 @@ cd ../producer
 ```
 
 Build the docker image and tag it
-Note: the localhost:5000 URL might change if you're working with public docker hub or a private cloud registry
+Note: the localhost:5000 URL might change if you're working with public docker hub or a private cloud registry. 
 ```
 docker build -t localhost:5000/pykaf-producer:v1 .
 ```
@@ -262,47 +263,127 @@ Push the image to the registry for k3s to pick it up
 docker push localhost:5000/pykaf-producer:v1
 ```
 
-Once pushed, deploy the producer in the cluster 
+Once pushed, deploy the producer in the cluster
+If you're using a private docker image registry please do not forget to put the right image name in the kubernetes yaml file (deploy.yaml) at line number 25 and then use the following command.
 ```
-kubectl apply -f deploy.yaml
+$ kubectl apply -f deploy.yaml
 ```
-THe output must be something like this
+The output must be something like this
 ```
 deployment.apps/pykaf-producer created
 ```
 
 Test if the deployment is running without any errors:
 ```
-$ kubectl get pods
+$ kubectl get pods | grep pykaf # filtering by deployment name
 ```
 Output should looks something like this:
 ```
 NAME                              READY   STATUS    RESTARTS      AGE
-my-release-zookeeper-0            1/1     Running   1 (42m ago)   16h
-my-release-kafka-0                1/1     Running   2 (41m ago)   16h
-my-redis-master-0                 1/1     Running   1 (41m ago)   15h
-my-redis-replicas-0               1/1     Running   1 (41m ago)   15h
-my-redis-replicas-1               1/1     Running   1 (41m ago)   15h
-my-redis-replicas-2               1/1     Running   1 (41m ago)   15h
 pykaf-producer-5798b957d5-t29pv   1/1     Running   0             89s
-# this final pod is the one we deployed in this step
 ```
 ## Running the consumer in the k3s cluster
+This is the piece of code responsible for the consumption of data from the kafka topic/queue and doing the necessary calculations.
 
+The calculations done are for the moving mean and standard deviation and this consumer is also responsible for writing the data to the redis db for the necessary CRUD operations.
 
+The steps to deploy this consumer are similar to the producer codebase
+```
+# from the previous step you must be in the producer directory
+# change directory to the consumer folder
+$ cd ../consumer
+# now you must be in the realtime-analytics-on-streaming-data/consumer directory
+```
 
+Build the docker file, tag it and push it to the registry
+```
+$ docker build -t localhost:5000/pykaf-consumer:v1 .
+$ docker push localhost:5000/pykaf-consumer:v1
+```
+
+Deploy in the cluster
+```
+$ kubectl apply -f deploy.yaml
+# output
+deployment.apps/pykaf-consumer created
+```
+
+Test if the deployment is running without any errors:
+```
+$ kubectl get pods | grep pykaf
+```
+
+Output should looks something like this:
+```
+pykaf-producer-5798b957d5-t29pv   1/1     Running   0             15m
+pykaf-consumer-77bd8764f7-45578   1/1     Running   0             2m19s
+```
 
 ## Testing the event flow between the producer and consumer flow
+Now that our kafka, producer and consumer codebases are deployed lets verify if the events are being transmitted among them successfully.
+
+Run the following command to check the pod names of the producer and consumer deployments
+```
+$ kubectl get pods | grep pykaf
+# output
+pykaf-producer-5798b957d5-t29pv   1/1     Running   0             15m
+pykaf-consumer-77bd8764f7-45578   1/1     Running   0             2m19s
+```
+
+Now we'll view the logs of both the pods simultaneously to see the event transmission happening. We should ideally use two terminal windows/tabs to view the logs.
+
+
+In terminal window 1
+```
+# copy the pod name of the producer (here we have it as pykaf-producer-5798b957d5-t29pv, you might see a different name) and execute the following commmand
+$ kubectl logs pykaf-producer-5798b957d5-t29pv -f
+
+# output
+# press Ctrl + c to escape from these streaming logs
+message published
+message published
+message published
+message published
+message published
+message published
+```
+
+In terminal window 2
+```
+# copy the pod name of the consumer (here we have it as pykaf-consumer-77bd8764f7-45578, you might see a different name) and execute the following commmand
+
+$ kubectl logs pykaf-consumer-77bd8764f7-45578 -f
+
+# output
+# press Ctrl + c to escape from these streaming logs
+Message is None
+Message is None
+Message is None
+Message is None
+Message is None
+b'{"2022-07-17_15-43-10": {"value": 0.6809525757404139, "sensor": "sensor_1"}}'
+Data updated successfully
+{'mean': 0.5077522295687356, 'std_dev': 0.29110740241655597, 'pre_division_variance': 20.592675297236664, 'variance': 0.08474351974171467, 'stream_length': 244.0}
+Message is None
+Message is None
+Message is None
+Message is None
+```
+If you see these bytes encoded string (dictionary) data in the satreaming logs every 10 seconds, your event transmission is running perfectly.
+
+What if it isn't running perfectly and I do not see data on the producer or consumer side ?
+Answer: It could be a problem in the kafka config - kafka cluster name, queue name etc only if modified. If this code is run without any modifications, then there ideally should not be any errors or missing data.
+
 
 ## Deploying the socketio backend in the k3s cluster and creating the service
+Now that
+
 
 ## Deploying the frontend in the k3s cluster and creating the service
 
-##
-
+## Depoying the ingress for the apps to be available outside the machine
 
 ## Output
-
 
 ## Word of caution
 This is by no means a production level codebase and system design. If running locally, this system might slow down your computer if multiple other applications are already running. 
