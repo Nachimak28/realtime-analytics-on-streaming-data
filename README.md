@@ -12,6 +12,7 @@ The sensor operates 24/7 and it will work forever.
 ## Sample output
 https://user-images.githubusercontent.com/23210132/179419147-538b8a66-1335-4874-b995-d1c0b9345753.mp4
 
+Note: Just to show the possibilities of the UI, we've done a dummy run with the frontend to show if the values go below or above a threshold then how does the UI display those changes.
 
 ## What I aim to learn out of this pet project
 Basics of Data Engineering using queue based solutions and an intuitive solution for incremental and real time analytics. Some math about the incremental mean and std dev. Also socketio.
