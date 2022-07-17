@@ -219,29 +219,74 @@ my-redis-master-0        1/1     Running   0          40s
 ## Clone this repo
 
 ```
-git clone https://github.com/Nachimak28/realtime-analytics-on-streaming-data
+$ git clone https://github.com/Nachimak28/realtime-analytics-on-streaming-data
 # change directory to be inside the repo folder
-cd realtime-analytics-on-streaming-data
+$ cd realtime-analytics-on-streaming-data
+```
+
+## Deploy basic config for infra before every other deployment
+There is a common config present which is shared by multiple containers and that must be deployed before other deployments
+
+```
+# change directory to be in the infra folder
+$ cd infra
+# now you are in the realtime-analytics-on-streaming-data/infra folder
+
+# now create the config map
+$ kubectl apply -f config_map.yaml
+```
+
+Output should look something like this:
+```
+configmap/streaming-config created
 ```
 
 ## Running the producer in the k3s cluster
 This is a simple python random number generator pushing values to a kafka topic/queue mimicking/simulating actual sensor values received from a sensor (eg: nitrogen content soil sensor) at certain time intervals (10 seconds in our case)
 
+```
+# from the previous step, you were in the infra directory
+# change directory to be in the producer directory
+cd ../producer
+# now you must be in the reaimtime-analytics-on-streaming-data/producer directory
+```
 
-First build the docker image and tag it
+Build the docker image and tag it
+Note: the localhost:5000 URL might change if you're working with public docker hub or a private cloud registry
 ```
 docker build -t localhost:5000/pykaf-producer:v1 .
 ```
 
 Push the image to the registry for k3s to pick it up
-
 ```
 docker push localhost:5000/pykaf-producer:v1
 ```
 
 Once pushed, deploy the producer in the cluster 
+```
+kubectl apply -f deploy.yaml
+```
+THe output must be something like this
+```
+deployment.apps/pykaf-producer created
+```
 
-
+Test if the deployment is running without any errors:
+```
+$ kubectl get pods
+```
+Output should looks something like this:
+```
+NAME                              READY   STATUS    RESTARTS      AGE
+my-release-zookeeper-0            1/1     Running   1 (42m ago)   16h
+my-release-kafka-0                1/1     Running   2 (41m ago)   16h
+my-redis-master-0                 1/1     Running   1 (41m ago)   15h
+my-redis-replicas-0               1/1     Running   1 (41m ago)   15h
+my-redis-replicas-1               1/1     Running   1 (41m ago)   15h
+my-redis-replicas-2               1/1     Running   1 (41m ago)   15h
+pykaf-producer-5798b957d5-t29pv   1/1     Running   0             89s
+# this final pod is the one we deployed in this step
+```
 ## Running the consumer in the k3s cluster
 
 
