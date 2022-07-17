@@ -10,7 +10,8 @@ All the values generated since the sensor began operation are not stored in a da
 The sensor operates 24/7 and it will work forever.
 
 ## Sample output
-Coming soon...
+https://user-images.githubusercontent.com/23210132/179419147-538b8a66-1335-4874-b995-d1c0b9345753.mp4
+
 
 ## What I aim to learn out of this pet project
 Basics of Data Engineering using queue based solutions and an intuitive solution for incremental and real time analytics. Some math about the incremental mean and std dev. Also socketio.
