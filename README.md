@@ -497,7 +497,9 @@ We're done here.
 
 ## Output
 
+https://user-images.githubusercontent.com/23210132/179419520-fbf4ae49-5846-4099-a924-761125fbe336.mov
 
+Note: The result will look similar for your deployment but the values might vary since the producer is a random number generator.
 
 ## Rejoice
 Congratulations on making it till this far. We're done with the deployment and we can enjoy the output displayed in the browser.
