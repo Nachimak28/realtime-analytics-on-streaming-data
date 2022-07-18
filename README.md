@@ -30,6 +30,11 @@ We simulate an IoT sensor producing some value at fixed time intervals and our a
 * Helm as package manager for configuring deployment in the kubernetes cluster
 * Kubernetes (k3s) for orchestration
 
+# Architecture?
+![Architecture_diagram drawio](https://user-images.githubusercontent.com/23210132/179452819-e2e889c4-03c5-41c1-9119-3a98e1691db6.png)
+
+
+
 # Steps to follow along and replicate this project are as follows
 
 All these modules can be run in a single machine. I run all this in a Google Cloud VM with 2 vCPU and 7.5 GB RAM with Ubuntu 18.04. 
