@@ -60,7 +60,7 @@ Follow the steps given in [this answer](https://devops.stackexchange.com/questio
 
 
 ## Installing and configuring helm
-Helm is a package manager for kubernetes - analogous to pip for python.
+Helm is a package manager for kubernetes - analogous to pip for python or npm for JS.
 
 Just follow the steps mentioned here: https://helm.sh/docs/intro/install/
 
@@ -68,7 +68,7 @@ Note: The older helm client (v2) required to create a service account - tiller (
 
 
 ## Running a local docker container registry
-There could be times that we need to upload our docker images to some private registry due to propreitory work or secret assets. I generally use google cloud's registry but if you don't have a cloud provision, you can configure your own registry running in the same machine from where kubernetes can pull the docker images. 
+There could be times that we need to upload our docker images to some private registry due to propreitory work or secret assets. I generally use google cloud's registry but if you don't have a cloud provision or don't want to pay for a private space on docker hub, you can configure your own registry running in the same machine from where kubernetes can pull the docker images.
 
 We can simply deploy our docker registry in our machine using the following command:
 
